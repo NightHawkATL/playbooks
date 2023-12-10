@@ -1,0 +1,40 @@
+---
+- hosts: all
+    vars:
+    IP_Addr: 10.0.2.24
+    PORT: 9008
+    TOKEN: AbCD3+#43 #Change to registered token
+  become: yes
+      
+  tasks:
+
+    - name: set timezone
+      shell: timedatectl set-timezone America/New_York
+
+    - name: Make sure timesyncd is stopped
+      systemd:
+        name: systemd-timesyncd.service
+        state: stopped
+
+    - name: Copy over the timesyncd config
+      template: src=../templates/timesyncd.conf dest=/etc/systemd/timesyncd.conf
+
+    - name: Make sure timesyncd is started
+      systemd:
+        name: systemd-timesyncd.service
+        state: started
+
+    - name: notify via Gotify
+      uri:
+        url: 'http://{{ IP_Addr }}:{{ PORT }}/message?token={{ TOKEN }}'
+        method: POST
+        body:
+          title:
+            content: Timezone has been set
+          message: 
+            content: The timezone playbook has been completed for {{ ansible_host }} and the guest is now using the local NTP. 
+          priority:
+            content: '5'
+        body_format: form-multipart
+      register: result
+...
