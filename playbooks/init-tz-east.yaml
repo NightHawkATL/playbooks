@@ -4,12 +4,13 @@
     IP_Addr: 10.0.2.24
     PORT: 9008
     TOKEN: AbCD3+#43 #Change to registered token
+    TZ: America/New_York
   become: yes
       
   tasks:
 
     - name: set timezone
-      shell: timedatectl set-timezone America/New_York
+      shell: timedatectl set-timezone {{ TZ }}
 
     - name: Make sure timesyncd is stopped
       systemd:
