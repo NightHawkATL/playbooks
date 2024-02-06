@@ -1,0 +1,87 @@
+---
+- hosts: all
+  become: yes
+  vars:
+   created_username: {{ username }}
+  
+  tasks:
+
+    - name: Setup passwordless sudo
+      lineinfile:
+        path: /etc/sudoers
+        state: present
+        regexp: '^%sudo'
+        line: '%sudo ALL=(ALL) NOPASSWD:ALL'
+        validate: '/usr/sbin/visudo -cf %s'
+
+    - name: packages | ensure apt list dir exists
+      file:
+        path: /var/lib/apt/lists/
+        state: directory
+        mode: 0755
+
+    - name: Create a new regular user with sudo privileges
+      user:
+        name: "{{ created_username }}"
+        state: present
+        groups: sudo
+        append: true
+        create_home: true
+
+    - name: Set authorized key for remote user
+      ansible.posix.authorized_key:
+        user: "{{ created_username }}"
+        state: present
+        key: "{{ lookup('file', lookup('env','HOME') + '/.ssh/id_rsa.pub') }}"
+
+    - name: Disable password authentication for root
+      lineinfile:
+        path: /etc/ssh/sshd_config
+        state: present
+        regexp: '^#?PermitRootLogin'
+        line: 'PermitRootLogin prohibit-password'
+
+    - name: UFW - Allow SSH connections
+      community.general.ufw:
+        rule: allow
+        name: OpenSSH
+
+    - name: UFW - Enable and deny by default
+      community.general.ufw:
+        state: enabled
+        default: deny
+
+    - name: install software-properties-common
+      apt:
+        name: software-properties-common
+        state: present
+        update_cache: true
+    
+    - name: install curl, git, wget
+      apt:
+        name: curl
+        state: present
+        update_cache: true
+
+        name: git
+        state: present
+        update_cache: true
+
+        name: wget
+        state: present
+        update_cache: true
+
+    - name: notify via Gotify
+      uri:
+        url: 'http://{{ ip_address }}:{{ port }}/message?token={{ token }}'
+        method: POST
+        body:
+          title:
+            content: Initial-Config Complete (LXC)
+          message: 
+            content: The initail configuration playbook has completed for {{ ansible_host }}. 
+          priority:
+            content: '5'
+        body_format: form-multipart
+      register: result
+...
