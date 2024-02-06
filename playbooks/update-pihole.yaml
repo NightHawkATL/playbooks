@@ -1,0 +1,35 @@
+---
+- hosts: all
+  become: yes
+  
+  tasks:
+
+    - name: pihole update
+      shell: pihole -up
+
+    - name: Update Gravity if there wasn't an update needed
+      shell: pihole updateGravity
+
+    - name: Check pihole container
+      uri:
+        url: http://{{ ansible_host }}/admin
+      register: result
+      until: result.status == 200
+      retries: 5
+      delay: 10
+
+    - name: notify via Gotify
+      uri:
+        url: 'http://{{ ip_address }}:{{ port }}/message?token={{ token }}'
+        method: POST
+        body:
+          title:
+            content: Pihole's have been updated
+          message: 
+            content: The pihole update playbook has completed for {{ ansible_host }} and the list of blocked URLs has been updated. 
+          priority:
+            content: '5'
+        body_format: form-multipart
+      register: result
+
+...    
