@@ -1,0 +1,65 @@
+---
+- hosts: all
+  become: true
+  vars:
+    wazuh_agent_ip: IP_ADDRESS #Replace with your manager's IP address
+    wazuh_agent_group: GROUP #Replace with the groups you want the agnet to put the node in (Must be created before deployment)
+    gotify_ip: GOTIFY_IP #Replace with the IP of your gotify server (If you don't want to use this, you can fork this and remove it)
+    gotify_port: GOTIFY_PORT #Replace with the port of your gotify server (If you don't want to use this, you can fork this and remove it)
+    gotify_token: GOTIFY_TOKEN #Replace with the token setup for the app alerts on your gotify server (If you don't want to use this, you can fork this and remove it)
+  tasks:
+
+  - name: install lsb-release
+    apt:
+      name: lsb-release
+      state: present
+      update_cache: true
+
+  - name: Get OS type #for future-use when I can edit the agent download based on the OS
+    shell: uname -s
+    ignore_errors: yes
+    register: uname_s_result
+
+  - name: Get OS arch #for future-use when I can edit the agent download based on the OS
+    shell: uname -m
+    ignore_errors: yes
+    register: uname_m_result
+
+  - name: Download Wazuh Agent
+    ansible.builtin.get_url:
+      url: https://packages.wazuh.com/4.x/apt/pool/main/w/wazuh-agent/wazuh-agent_4.7.2-1_amd64.deb
+      dest: ./wazuh-agent_4.7.2-1_amd64.deb
+      mode: 0775
+    
+  - name: Deploy Wazuh Agent
+    shell: sudo WAZUH_MANAGER='{{ wazuh_agent_ip }}' WAZUH_AGENT_GROUP='{{ wazuh_agent_group }}' WAZUH_AGENT_NAME='{{ ansible_hostname }}' dpkg -i ./wazuh-agent_4.7.2-1_amd64.deb
+
+  - name: Reload daemon
+    shell: sudo systemctl daemon-reload
+    ignore_errors: yes
+    register: daemon_reload_result
+
+  - name: enable Wazuh
+    ansible.builtin.service:
+      name: wazuh-agent
+      enabled: yes
+      
+  - name: start Wazuh
+    ansible.builtin.service:
+      name: wazuh-agent
+      state: started
+
+  - name: notify via Gotify
+    uri:
+      url: 'http://{{ gotify_ip }}:{{ gotify_port }}/message?token={{ gotify_token }}'
+      method: POST
+      body:
+        title:
+          content: Wazuh Agent Deployed on All VMs & LXCs
+        message: 
+          content: The Wazuh deployment playbook has completed for {{ ansible_host }} and the agent has been loaded. 
+        priority:
+          content: '5'
+      body_format: form-multipart
+    register: result
+...   
