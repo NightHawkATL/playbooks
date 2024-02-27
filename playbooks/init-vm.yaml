@@ -49,7 +49,7 @@
           title:
             content: Initial-Config Complete (VM)
           message: 
-            content: The initail configuration playbook has completed for {{ ansible_host }} and the guest agent has been loaded. 
+            content: The initial configuration playbook has completed for {{ ansible_host }} and the guest agent has been loaded. 
           priority:
             content: '5'
         body_format: form-multipart
