@@ -2,7 +2,7 @@
 - hosts: all
   become: yes
   vars:
-   created_username: {{ username }}
+   created_user: {{ username }}
    gotify_ip: GOTIFY_IP #Replace with the IP of your gotify server (If you don't want to use this, you can fork this and remove it)
    gotify_port: GOTIFY_PORT #Replace with the port of your gotify server (If you don't want to use this, you can fork this and remove it)
    gotify_token: GOTIFY_TOKEN #Replace with the token setup for the app alerts on your gotify server (If you don't want to use this, you can fork this and remove it)
@@ -43,6 +43,13 @@
         name: software-properties-common
         state: present
         update_cache: true
+    
+    - name: Add user with a bash shell, appending the group 'sudo' to the user's groups (You will still need to login as root and set the passwd for this user)
+      ansible.builtin.user:
+        name: {{ created_user }}
+        shell: /bin/bash
+        groups: sudo
+        append: yes
 
     - name: notify via Gotify
       uri:
