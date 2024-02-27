@@ -3,6 +3,7 @@
   become: true
   vars:
    created_username: $user$ #change this to the user you wish to create (You will still need to set the password before use using root user and command "passwd {username}"
+   docker_compose_version: v2.24.6 #change version to whatever is recent on their github page (https://github.com/docker/compose/releases) 
   
   tasks:
   - name: install dependencies
@@ -58,7 +59,7 @@
 
   - name: Install docker-compose (based on OS and arch from above)
     uri:
-      url : https://github.com/docker/compose/releases/download/v2.24.6/docker-compose-{{ uname_s_result.stdout }}-{{ uname_m_result.stdout }}
+      url : https://github.com/docker/compose/releases/download/{{ docker_compose_version }}/docker-compose-{{ uname_s_result.stdout }}-{{ uname_m_result.stdout }}
       method: GET
       dest: /usr/local/bin/docker-compose
       mode: 'u+x,g+x'
