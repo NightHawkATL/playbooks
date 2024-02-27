@@ -3,6 +3,9 @@
   become: yes
   vars:
    created_username: {{ username }}
+   gotify_ip: GOTIFY_IP #Replace with the IP of your gotify server (If you don't want to use this, you can fork this and remove it)
+   gotify_port: GOTIFY_PORT #Replace with the port of your gotify server (If you don't want to use this, you can fork this and remove it)
+   gotify_token: GOTIFY_TOKEN #Replace with the token setup for the app alerts on your gotify server (If you don't want to use this, you can fork this and remove it)
   
   tasks:
 
@@ -43,7 +46,7 @@
 
     - name: notify via Gotify
       uri:
-        url: 'http://{{ IP_Address }}:{{ port }}/message?token={{ token }}'
+        url: 'http://{{ GOTIFY_IP }}:{{ GOTIFY_PORT }}/message?token={{ GOTIFY_TOKEN }}'
         method: POST
         body:
           title:
