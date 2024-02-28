@@ -1,0 +1,19 @@
+---
+- hosts: all
+  gather_facts: yes
+  become: true
+  
+  tasks:
+    
+    - name: cleanup old images
+      shell: |
+        oldimage=`docker images | grep '<none>' | awk '{print $3}'`
+        if [ -z "$oldimage" ]
+        then
+        echo "There are no old images found!"
+        else
+        docker rmi ${oldimage} -f
+        fi        
+      ignore_errors: yes
+      
+...
