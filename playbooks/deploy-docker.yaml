@@ -3,7 +3,10 @@
   become: true
   vars:
    created_username: $user$ #change this to the user you wish to create (You will still need to set the password before use using root user and command "passwd {username}"
-   docker_compose_version: v2.24.6 #change version to whatever is recent on their github page (https://github.com/docker/compose/releases) 
+   docker_compose_version: v2.24.6 #change version to whatever is recent on their github page (https://github.com/docker/compose/releases)
+   GOTIFY_IP: $GOTIFY_IP$ #replace with your internal IP for Gotify
+   GOTIFY_PORT: $GOTIFY_PORT$ #replace with your internal port for Gotify
+   GOTIFY_TOKEN: $GOTIFY_TOKEN$ #replace with your token for Gotify
   
   tasks:
   - name: install dependencies
@@ -83,5 +86,18 @@
       name: docker
       enabled: true
       state: started
-
+      
+  - name: notify via Gotify
+     uri:
+       url: 'http://{{ GOTIFY_IP }}:{{ GOTIFY_PORT }}/message?token={{ GOTIFY_TOKEN }}'
+       method: POST
+       body:
+         title:
+           content: Docker has been deployed!
+         message: 
+           content: The docker deployment playbook has completed for {{ ansible_host }} and has been started. The user {{ created_user }} was created. Please login and set the password for this user.
+         priority:
+           content: '5'
+       body_format: form-multipart
+     register: result
 ...
