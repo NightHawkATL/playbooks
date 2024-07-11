@@ -1,6 +1,10 @@
 ---
 - hosts: all
   become: yes
+  vars:
+   GOTIFY_IP: 10.0.2.25
+   GOTIFY_PORT: 9008
+   GOTIFY_TOKEN: AizZUIUkUmWCkdw
   
   tasks:
   
@@ -51,7 +55,7 @@
 
     - name: notify via Gotify
       uri:
-        url: 'http://{{ ip_address }}:{{ port }}/message?token={{ token }}'
+        url: 'http://{{ GOTIFY_IP }}:{{ GOTIFY_PORT }}/message?token={{ GOTIFY_TOKEN }}'
         method: POST
         body:
           title:
