@@ -2,9 +2,9 @@
 - hosts: all
   become: yes
   vars:
-   GOTIFY_IP: 10.0.2.25
-   GOTIFY_PORT: 9008
-   GOTIFY_TOKEN: AizZUIUkUmWCkdw
+   GOTIFY_IP: X.X.X.X #[Your gotify host IP goes here]
+   GOTIFY_PORT: XXXX #[Your gotify port goes here]
+   GOTIFY_TOKEN: ABCD1234 #[Your app token goes here]
   
   tasks:
   
