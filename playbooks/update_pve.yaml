@@ -1,0 +1,60 @@
+---
+- hosts: all
+  gather_facts: yes
+  become: yes
+  vars:
+   GOTIFY_IP: $GOTIFY_IP$ #replace with your internal IP for Gotify
+   GOTIFY_PORT: $GOTIFY_PORT$ #replace with your internal port for Gotify
+   GOTIFY_TOKEN: $GOTIFY_TOKEN$ #replace with your token for Gotify
+  
+  tasks:
+  
+    - name: Run update on PVE
+      ansible.builtin.shell:
+        cmd: pveupdate
+      check_mode: false
+
+    - name: Run upgrade on PVE
+      ansible.builtin.shell:
+        cmd: pveupgrade
+
+    # - name: update apt packages
+    #   apt:
+    #     upgrade: yes
+    #     update_cache: yes    
+    
+    - name: List installed and updated packages
+      shell: grep -E "^$(date +%Y-%m-%d).+ (install|upgrade) " /var/log/dpkg.log |cut -d " " -f 3-5
+      register: result 
+
+    - name: Show Output
+      debug: msg="{{ result.stdout_lines }}"
+
+    - name: Check if a reboot is required.
+      ansible.builtin.stat:
+        path: /var/run/reboot-required
+        get_md5: no
+      register: reboot_required_file
+
+    - name: Show Output of required reboots
+      debug: msg="{{ reboot_required_file.stat.exists == true }}"
+
+    - name: Remove dependencies that are no longer required.
+      ansible.builtin.apt:
+        autoremove: yes
+
+    - name: notify via Gotify
+      uri:
+        url: 'http://{{ GOTIFY_IP }}:{{ GOTIFY_PORT }}/message?token={{ GOTIFY_TOKEN }}'
+        method: POST
+        body:
+          title:
+            content: Proxmox Update
+          message: 
+            content: The Proxmox Update playbook has completed for {{ ansible_host }} and a required reboot is {{ reboot_required_file.stat.exists == true }}.
+          priority:
+            content: '5'
+        body_format: form-multipart
+      register: result
+
+...
