@@ -9,6 +9,10 @@
   
   tasks:
   
+    - name: Get Hostnames
+      debug:
+        msg: "{{ ansible_hostname }}:{{ ansible_default_ipv4.address }}"
+  
     - name: Run update on PVE
       ansible.builtin.shell:
         cmd: pveupdate
