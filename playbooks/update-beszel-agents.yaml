@@ -1,0 +1,37 @@
+---
+- hosts: all
+  become: true
+  vars:
+   GOTIFY_IP: [ip] #Replace with the IP of your gotify server (If you don't want to use this, you can fork this and remove it)
+   GOTIFY_PORT: [port] #Replace with the port of your gotify server (If you don't want to use this, you can fork this and remove it)
+   GOTIFY_TOKEN: [token] #Replace with the token setup for the app alerts on your gotify server (If you don't want to use this, you can fork this and remove it)
+  
+
+  tasks:
+
+  - name: Update Beszel Agent  
+    shell: /root/beszel-agent update
+    ignore_errors: yes
+    register: agent_updated
+
+  - name: Restart Beszel Service
+    ansible.builtin.service:
+      name: beszel-agent
+      enabled: true
+      state: restarted
+
+  - name: notify via Gotify
+    uri:
+      url: 'http://{{ GOTIFY_IP }}:{{ GOTIFY_PORT }}/message?token={{ GOTIFY_TOKEN }}'
+      method: POST
+      body:
+        title:
+          content: Initial-Config Complete (VM)
+        message: 
+          content: the BesZel Agent has been updated on {{ ansible_host }}. The service has also been restarted
+        priority:
+          content: '5'
+      body_format: form-multipart
+    register: result
+
+...
