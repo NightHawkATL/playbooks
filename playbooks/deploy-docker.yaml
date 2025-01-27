@@ -28,17 +28,17 @@
       url: https://download.docker.com/linux/{{ ansible_distribution | lower }}/gpg
       state: present
       
-  - name: Get OS type
+  - name: Get OS type (Linux)
     shell: uname -s
     ignore_errors: yes
     register: uname_s_result
     
-  - name: Get OS arch  
+  - name: Get OS proc (x86_64 or aarch64)
     shell: uname -m
     ignore_errors: yes
     register: uname_m_result
 
-  - name: Get OS arch  
+  - name: Get OS arch (amd64 or arm64)
     shell: dpkg --print-architecture
     ignore_errors: yes
     register: arch_result
