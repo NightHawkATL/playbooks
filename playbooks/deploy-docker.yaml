@@ -77,7 +77,7 @@
 
   - name: Add user with a bash shell, appending the group 'sudo' and 'docker' to the user's groups (You will still need to set the password before use using root user and command "passwd {username}"
     ansible.builtin.user:
-      name: {{ created_user }}
+      name: {{ created_username }}
       shell: /bin/bash
       groups: sudo, docker
       append: yes
