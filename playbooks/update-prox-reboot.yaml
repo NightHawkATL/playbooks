@@ -1,0 +1,79 @@
+---
+- hosts: all
+  gather_facts: yes
+  become: yes
+  vars:
+    current_version: "{{ kernel_shell_start_output }}"
+    latest_version: "{{ kernel_shell_finish_output }}"
+    GOTIFY_IP: X.X.X.X #[Your gotify host IP goes here]
+    GOTIFY_PORT: XXXX #[Your gotify port goes here]
+    GOTIFY_TOKEN: ABCD1234 #[Your app token goes here]
+
+  tasks:
+  
+    - name: Get Hostnames
+      debug:
+        msg: "{{ ansible_hostname }}:{{ ansible_default_ipv4.address }}"
+
+    - name: Get Kernel version
+      shell: uname -r
+      register: kernel_shell_start_output
+    
+    - name: "Set version variables"
+      set_fact:
+        current_version: "{{ kernel_shell_start_output.stdout }}"
+
+    - name: update apt packages
+      apt:
+        upgrade: yes
+        update_cache: yes    
+    
+    - name: List installed and updated packages
+      shell: grep -E "^$(date +%Y-%m-%d).+ (install|upgrade) " /var/log/dpkg.log |cut -d " " -f 3-5
+      register: result 
+
+    - name: Show Output
+      debug: msg="{{ result.stdout_lines }}"
+
+    - name: Get Kernel version
+      shell: uname -r
+      register: kernel_shell_finish_output
+
+    - name: "Set version variables"
+      set_fact:
+        latest_version: "{{ kernel_shell_finish_output.stdout }}"
+
+    - name: Verify if the kernel version changed
+      debug:
+        msg: "{{ current_version }} is older than {{ latest_version }}"
+      when: current_version is version(latest_version, '<')
+
+    - name: Remove dependencies that are no longer required.
+      ansible.builtin.apt:
+        autoremove: yes
+
+    - name: Reboot if kernel updated
+      reboot:
+        msg: "Reboot initiated by Ansible for kernel updates"
+        connect_timeout: 60
+        reboot_timeout: 600
+        pre_reboot_delay: 0
+        post_reboot_delay: 30
+        test_command: uptime 
+      when: current_version is version(latest_version, '!=')
+
+    - name: notify via Gotify
+      uri:
+        url: 'http://{{ GOTIFY_IP }}:{{ GOTIFY_PORT }}/message?token={{ GOTIFY_TOKEN }}'
+        method: POST
+        body:
+          title:
+            content: Proxmox APT Packages Update
+          message: 
+            content: "The Proxmox Update playbook has completed for {{ ansible_hostname }}. \n \n The kernel version at start was {{ current_version }} and the final kernel is {{ latest_version }}. \n \n The current updates are: {{ result.stdout_lines }}."
+          priority:
+            content: '5'
+        body_format: form-multipart
+      register: result
+
+...
